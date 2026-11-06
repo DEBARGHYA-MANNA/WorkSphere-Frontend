@@ -16,8 +16,8 @@ through its published OpenAPI contract.
 | 1     | Project foundation                  | ✅ Complete |
 | 2     | Design system and dashboard shell   | ✅ Complete |
 | 3     | Authentication and session handling | ✅ Complete |
-| 4     | Organization management             | Next        |
-| 5     | Team management                     | Pending     |
+| 4     | Organization management             | ✅ Complete |
+| 5     | Team management                     | Next        |
 | 6     | Project management                  | Pending     |
 | 7     | Task management                     | Pending     |
 | 8     | Kanban and calendar views           | Pending     |
@@ -57,6 +57,40 @@ npm run dev
 
 The backend must be reachable at the proxy target for API calls to succeed. Start it with the
 backend repository's own instructions (default `http://localhost:3000`, API base `/api/v1`).
+
+### The backend needs MongoDB running as a replica set
+
+Most write operations (creating an organization, project, task, comment, invitation or membership
+change) run inside a MongoDB transaction. **A standalone `mongod` cannot run them**, and the API
+answers `500` with:
+
+> `Transaction numbers are only allowed on a replica set member or mongos`
+
+That is a database configuration problem, not a frontend one, and it must be fixed in the backend:
+
+```bash
+# one-time, converts an existing standalone instance in place (no data loss)
+mongosh --eval 'rs.initiate({_id: "rs0", members: [{_id: 0, host: "127.0.0.1:27017"}]})'
+```
+
+```bash
+# backend .env — the URI must name the replica set
+MONGODB_URI=mongodb://127.0.0.1:27017/worksphere?replicaSet=rs0
+```
+
+**Restart the backend afterwards** — Node reads `.env` once at boot and never re-reads it. Reading
+and listing still work on a standalone server, so login succeeding is not proof the database is
+correctly configured.
+
+To find out which of these is wrong:
+
+```bash
+bash scripts/diagnose-mongo-transactions.sh /path/to/WorkSphere-Backend
+```
+
+It reports the URI the backend will actually load (credentials masked), whether the live server
+reports a replica set, and whether the running process started before or after your last `.env`
+edit — the last one being the most common reason a correct-looking fix changes nothing.
 
 ## Scripts
 
@@ -164,9 +198,11 @@ Tokens live in `src/styles/globals.css` as HSL channel triplets and are wired in
   Collapsed items expose their label through a tooltip and `sr-only` text.
 - **Mobile drawer.** Below `lg` the sidebar becomes a full-height sheet with 44px touch rows; it
   closes on navigation and restores focus to the trigger.
-- **Organization switcher.** Shows the active organization and role, switch list, and a
-  "Create organization" entry. While the API query is intentionally disabled (Phase 4 wires it), it
-  renders a truthful "No organization" state — never a placeholder company.
+- **Organization switcher.** Backed by `GET /organizations` (Phase 4). Shows the active organization
+  and role, every membership to switch to, and a "Create organization" dialog. Switching calls
+  `POST /organizations/:id/switch` to confirm membership, then drops every tenant-scoped query so no
+  data from the previous organization can be shown. With no memberships it renders a truthful
+  "No organization" state — never a placeholder company.
 - **Breadcrumbs.** Built from the pathname; 24-char object ids are never shown raw — the owning page
   supplies a real label. Hidden on root sections where the page title already says where you are.
 - **Theme switcher.** Explicit light / dark / system menu, not a two-state toggle.

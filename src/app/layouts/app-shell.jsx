@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useRef } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { AppHeader } from '@/components/layout/app-header'
 import { AppSidebar } from '@/components/layout/app-sidebar'
@@ -6,7 +6,11 @@ import { MobileNav } from '@/components/layout/mobile-nav'
 import { PageSkeleton } from '@/components/common/page-skeleton'
 import { ErrorBoundary } from '@/components/common/error-boundary'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { useOrganizations } from '@/features/organizations/hooks/use-organizations'
+import {
+  useOrganizations,
+  useSwitchOrganization,
+} from '@/features/organizations/hooks/use-organizations'
+import { CreateOrganizationDialog } from '@/features/organizations/components/create-organization-dialog'
 import { useLogout } from '@/features/auth/hooks/use-session'
 import { useAuthStore } from '@/features/auth/auth-store'
 import { useUiStore } from '@/stores/ui-store'
@@ -37,9 +41,19 @@ export function AppShell() {
   const {
     organizations,
     activeOrganization,
-    selectOrganization,
     isLoading: isLoadingOrganizations,
   } = useOrganizations()
+  const switchOrganization = useSwitchOrganization()
+  const [createOrgOpen, setCreateOrgOpen] = useState(false)
+
+  // Switching validates membership server-side before the context changes.
+  const handleSelectOrganization = useCallback(
+    (organizationId) => {
+      if (!organizationId || organizationId === activeOrganization?.id) return
+      switchOrganization.mutate(organizationId)
+    },
+    [activeOrganization?.id, switchOrganization],
+  )
 
   const user = useAuthStore((state) => state.user)
   const logout = useLogout()
@@ -79,8 +93,8 @@ export function AppShell() {
           onToggleCollapsed={toggleSidebar}
           organizations={organizations}
           activeOrganization={activeOrganization}
-          onSelectOrganization={selectOrganization}
-          onCreateOrganization={closeMobileNav}
+          onSelectOrganization={handleSelectOrganization}
+          onCreateOrganization={() => setCreateOrgOpen(true)}
           isLoadingOrganizations={isLoadingOrganizations}
           onNavigate={undefined}
         />
@@ -90,8 +104,11 @@ export function AppShell() {
           onOpenChange={setMobileNavOpen}
           organizations={organizations}
           activeOrganization={activeOrganization}
-          onSelectOrganization={selectOrganization}
-          onCreateOrganization={closeMobileNav}
+          onSelectOrganization={handleSelectOrganization}
+          onCreateOrganization={() => {
+            setCreateOrgOpen(true)
+            closeMobileNav()
+          }}
           isLoadingOrganizations={isLoadingOrganizations}
           onNavigate={closeMobileNav}
         />
@@ -121,6 +138,8 @@ export function AppShell() {
           </main>
         </div>
       </div>
+
+      <CreateOrganizationDialog open={createOrgOpen} onOpenChange={setCreateOrgOpen} />
     </TooltipProvider>
   )
 }

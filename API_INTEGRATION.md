@@ -158,6 +158,37 @@ dedicated test that fires three parallel 401s and asserts exactly one `/auth/ref
 IDs are 24-character hex MongoDB ObjectIds; matching Zod schemas use
 `/^[a-fA-F0-9]{24}$/`.
 
+## Tenancy model
+
+The tenant travels in the URL (`/organizations/:organizationId/...`). There is **no** tenant claim in
+the access token and `POST /organizations/:id/switch` does not mint a new one — it only validates
+that the caller is a member. Consequently `src/features/organizations/hooks/use-organizations.js`
+treats the persisted `activeOrganizationId` as a _hint_: if it no longer matches a membership it falls
+back to the first one, and a successful switch removes every tenant-scoped query
+(`projects`, `tasks`, `members`, `invitations`, `notifications`, `analytics`) so stale data from the
+previous organization can never be rendered.
+
+## Phase 4 contract notes (organizations and invitations)
+
+| Endpoint                         | Behaviour relied on by the UI                                                                                                                                                                                        |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /organizations`             | Memberships of the caller only; `limit` max 100. Returns raw documents (`_id`), normalised to `id` in the service layer.                                                                                             |
+| `POST /organizations`            | `201` → `{ organization, membership }`; the creator becomes Owner atomically.                                                                                                                                        |
+| `PATCH /organizations/:id`       | Owner/Admin. Joi `min(1)` — at least one field; `settings` accepts `allowMemberInvites` and `defaultMemberRole` (`Member`/`Viewer`).                                                                                 |
+| `POST /organizations/:id/switch` | Membership check only; no token is issued.                                                                                                                                                                           |
+| `DELETE /organizations/:id`      | Owner only.                                                                                                                                                                                                          |
+| `GET …/invitations`              | Returns **only pending, unexpired** invitations, so the UI is titled "Pending invitations".                                                                                                                          |
+| `POST …/invitations`             | `role` optional (defaults to `settings.defaultMemberRole`); errors `403 ROLE_ASSIGNMENT_FORBIDDEN`, `403 INVITATIONS_DISABLED`, `409 ALREADY_A_MEMBER`, `409 INVITATION_EXISTS`. **The response contains no token.** |
+| `DELETE …/invitations/:id`       | `403 FORBIDDEN` when the actor's rank is too low, `404 INVITATION_NOT_FOUND`.                                                                                                                                        |
+| `POST /invitations/accept`       | Body `{ token }` (32–256 chars, `[A-Za-z0-9_-]`); `400 INVALID_INVITATION`, `409 ALREADY_A_MEMBER`, `403 EMAIL_VERIFICATION_REQUIRED`. Invitation TTL is 7 days.                                                     |
+
+**Two UI consequences worth remembering:**
+
+1. The invitation token is never returned by any endpoint — it exists only inside the invitation email.
+   There is no "copy invite link" affordance and there cannot be one.
+2. `src/services/mailer.js` is a no-op without a configured transport, and invitation-mail failures are
+   swallowed. Success copy therefore never claims that an email was delivered.
+
 ## Query parameters supported by the backend
 
 - **Projects:** `page`, `limit`, `q`, `status`, `visibility`, `archived`, `dueAfter`, `dueBefore`,
@@ -187,6 +218,20 @@ part of the contract and is therefore not presented as functional.
   in the backend; the UI reports this honestly when a token never arrives.
 - **Slug uniqueness.** Organization names map to a unique slug; a `409 ORGANIZATION_SLUG_TAKEN`
   surfaces as an inline conflict message.
+
+## Environment failures vs. application failures
+
+A `500` from the API is always a server-side problem, and the frontend deliberately does **not** show
+the backend's own message for 5xx — raw driver errors can leak internals. The envelope message is
+preserved on the error object as `ApiError.serverMessage` and logged with the `requestId` in the
+browser console, so a developer can tell a database outage from an application bug without reading the
+network tab.
+
+| Symptom                                           | Real cause                                                   | Fix                                            |
+| ------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------- |
+| `500` on any write operation                      | MongoDB is a standalone server, not a replica set (error 20) | Initiate a single-node replica set, see README |
+| Writes work, `500` reappears after editing `.env` | Backend booted before the `.env` change                      | Restart the backend                            |
+| `401` on every request                            | Refresh cookie not first-party (bypassing the Vite proxy)    | Call the API same-origin via the proxy         |
 
 ## Adding a new integration
 

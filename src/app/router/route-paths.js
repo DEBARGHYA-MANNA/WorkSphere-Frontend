@@ -3,6 +3,7 @@ import { ROUTES } from '@/lib/constants'
 /** Primary sidebar navigation, in display order. */
 export const PRIMARY_NAV = [
   { key: 'dashboard', to: ROUTES.dashboard, label: 'Dashboard', icon: 'LayoutDashboard' },
+  { key: 'organizations', to: ROUTES.organizations, label: 'Organizations', icon: 'Building2' },
   { key: 'my-tasks', to: ROUTES.myTasks, label: 'My Tasks', icon: 'CircleCheckBig' },
   { key: 'projects', to: ROUTES.projects, label: 'Projects', icon: 'FolderKanban' },
   { key: 'members', to: ROUTES.members, label: 'Team Members', icon: 'Users' },

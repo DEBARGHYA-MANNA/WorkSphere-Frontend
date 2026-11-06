@@ -82,6 +82,42 @@ authenticated/unauthenticated` lifecycle and a recorded `endedReason` for the lo
 - **Sign-out** wired through the header profile menu, fail-safe when the network call fails.
 - **`PublicLayout`** providing the Suspense boundary the lazy auth pages need.
 
+### Added — Phase 4: Organization management
+
+- **Organization list** (`/organizations`): every membership with the active one marked, role badges,
+  and a switch action per card.
+- **Create organization** dialog mirroring the backend validation — name 2–120 with at least one
+  letter or digit, optional description ≤ 2000, and the invitation policy (`allowMemberInvites`,
+  `defaultMemberRole` limited to Member/Viewer). A `409` slug collision is mapped onto the name field.
+- **Organization switcher** (sidebar) now reads `GET /organizations` instead of the documented empty
+  state, and creates organizations inline.
+- **Organization settings** (`/settings/organization`): details + invitation policy form (read-only
+  without `organization:update`), pending invitations, and an Owner-only delete zone behind a
+  confirmation naming the organization.
+- **Invitations**: list pending invitations (the endpoint returns only `pending` and unexpired),
+  invite by email with a role the actor may actually assign (`canAssignRole`), and revoke behind a
+  confirmation dialog.
+- **`/accept-invitation`**: accepts a token from `?token=`, validates its shape client-side
+  (32–256 chars of `[A-Za-z0-9_-]`), and explains `INVALID_INVITATION` (400), `ALREADY_A_MEMBER`
+  (409), and `EMAIL_VERIFICATION_REQUIRED` (403). Success makes the joined organization the active
+  context.
+- **`src/lib/permissions.js`**: client-side mirror of the backend permission matrix
+  (`ROLE_RANK`, per-role permissions, `canAssignRole`, `assignableRolesFor`). UX only — the backend
+  still authorises every request.
+- **Validation**: `organization-schemas.js` for create/update/invite, mirroring the Joi rules
+  including the "at least one field" rule on `PATCH`.
+- New UI primitives: `textarea`, `switch`, `select`.
+
+### Notes — Phase 4
+
+- **The invitation link cannot be displayed.** No endpoint returns the invitation token — it exists
+  only inside the invitation email — so the invite dialog says so and offers no "copy link" action.
+- **Email delivery is not guaranteed.** The backend mailer is a no-op when no transport is
+  configured (`src/services/mailer.js` logs and returns, invitation-mail failures are swallowed), so
+  success copy never claims an email was sent.
+- The API returns raw Mongo documents; `organization-service.js#withId` normalises `_id` → `id` in
+  the service layer so no component has to know which key to read.
+
 ### Fixed — Phase 3
 
 - **`PasswordInput` did not forward its ref**, so React Hook Form never read the password and every
@@ -106,4 +142,4 @@ authenticated/unauthenticated` lifecycle and a recorded `endedReason` for the lo
 
 - `npm run dev` serves the app; `/`, `/dashboard`, and unknown routes resolve correctly.
 - `npm run build` succeeds with per-route chunks.
-- `npm run lint`, `npm run format:check`, and `npm test` (147 tests) pass.
+- `npm run lint`, `npm run format:check`, and `npm test` (199 tests) pass.

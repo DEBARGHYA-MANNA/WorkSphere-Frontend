@@ -46,6 +46,11 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: ['./tests/setup.js'],
       css: false,
+      // The organization and shell specs both mount the full router and share
+      // jsdom's single document; forked, isolated workers keep focus and timers
+      // from leaking between files so the suite cannot flake on load order.
+      isolate: true,
+      pool: 'forks',
       include: ['src/**/*.{test,spec}.{js,jsx}', 'tests/**/*.{test,spec}.{js,jsx}'],
       exclude: ['tests/e2e/**', 'node_modules/**', 'dist/**'],
       coverage: {
