@@ -17,7 +17,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  * tooltip: the backend contract has no cross-resource search endpoint, and the
  * brief forbids simulating one.
  */
-export function AppHeader({ onOpenMobileNav }) {
+export function AppHeader({
+  onOpenMobileNav,
+  user,
+  onSignOut,
+  isSigningOut = false,
+  unreadCount = 0,
+  canSignOut = false,
+}) {
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background/85 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:px-4 lg:px-6">
       <Button
@@ -56,9 +63,14 @@ export function AppHeader({ onOpenMobileNav }) {
           </TooltipContent>
         </Tooltip>
 
-        <NotificationBell />
+        <NotificationBell unreadCount={unreadCount} />
         <ThemeToggle />
-        <ProfileMenu canSignOut={false} />
+        <ProfileMenu
+          user={user}
+          onSignOut={onSignOut}
+          canSignOut={canSignOut}
+          isSigningOut={isSigningOut}
+        />
       </div>
     </header>
   )

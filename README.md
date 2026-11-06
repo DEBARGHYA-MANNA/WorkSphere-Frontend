@@ -15,8 +15,8 @@ through its published OpenAPI contract.
 | ----- | ----------------------------------- | ----------- |
 | 1     | Project foundation                  | ✅ Complete |
 | 2     | Design system and dashboard shell   | ✅ Complete |
-| 3     | Authentication and session handling | Next        |
-| 4     | Organization management             | Pending     |
+| 3     | Authentication and session handling | ✅ Complete |
+| 4     | Organization management             | Next        |
 | 5     | Team management                     | Pending     |
 | 6     | Project management                  | Pending     |
 | 7     | Task management                     | Pending     |
@@ -118,6 +118,28 @@ Tokens live in `src/styles/globals.css` as HSL channel triplets and are wired in
   applied before first paint to avoid a flash.
 - Radius, elevation (`shadow-xs … shadow-lg`), focus ring, and motion tokens are shared.
 - `prefers-reduced-motion` is honoured globally.
+
+### Authentication and security
+
+- **Access token: memory only.** It is held in a module-level store, never in
+  `localStorage`, `sessionStorage`, IndexedDB, or a JS-readable cookie. A reload therefore loses it
+  by design and the app re-mints one with `POST /auth/refresh`.
+- **Refresh token: HttpOnly cookie.** Issued by the backend as `worksphereRefreshToken`, scoped to
+  `Path=/api/v1/auth`, `SameSite=lax`. JavaScript cannot read it. Same-origin serving (Vite proxy in
+  dev, reverse proxy in prod) keeps it first-party.
+- **Concurrency-safe refresh.** Parallel `401`s share a single in-flight refresh. Firing several
+  rotations at once would trip the backend's refresh-token reuse detection and revoke the session.
+- **No redirect loops.** Route guards render a "Restoring your session…" status while the cookie is
+  being checked, rather than redirecting on `idle`. Focus is never stolen.
+- **Safe return paths.** `?redirect=` is sanitised: only internal absolute paths survive; `//host`,
+  `https://…`, `javascript:…`, and auth screens fall back to the dashboard (open-redirect protection).
+- **Email verification is not assumed.** `register` reads `emailVerificationRequired` from the
+  response. With the backend's default `EMAIL_VERIFICATION_ENABLED=false`, users sign in immediately;
+  if the flag is `true`, the "Check your email" screen appears instead.
+- **Sign-out is fail-safe.** Local state is cleared even when the network call fails — a user who asks
+  to sign out is never left signed in. Sibling tabs are notified over `BroadcastChannel`.
+- **Field errors map to inputs.** Backend `400/422` `error.details` become per-field messages via
+  React Hook Form `setError`, plus an inline alert for non-field failures.
 
 ### Dashboard shell
 

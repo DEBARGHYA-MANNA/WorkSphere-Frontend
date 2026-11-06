@@ -54,7 +54,47 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   focus order, breadcrumb building, header controls, Button `asChild` contract) and Playwright specs
   for the shell and responsive navigation.
 
-### Fixed
+### Added — Phase 3: Authentication
+
+- **Central Axios client** (`services/http/client.js`) with `withCredentials`, bounded timeout,
+  `FormData` passthrough, and automatic bearer-token attachment from the in-memory store.
+- **In-memory access-token store** (`services/http/token-store.js`) — no storage API exists for the
+  refresh token, so it cannot be persisted even by mistake.
+- **Interceptors** (`services/http/interceptors.js`): backend-envelope error normalisation
+  (`ApiError` with stable codes, field errors, request id, preserved `serverCode`), single-flight
+  refresh for parallel 401s, one retry per request, session-expiry broadcast, and cross-tab token
+  hand-off over `BroadcastChannel`.
+- **Auth service** mirroring the OpenAPI "Authentication" tag: register, login, logout, logout-all,
+  forgot/reset password, verify email, resend verification, and `GET /users/me`.
+- **Session store** (`features/auth/auth-store.js`) with an explicit `idle → checking →
+authenticated/unauthenticated` lifecycle and a recorded `endedReason` for the login screen.
+- **Session bootstrap** that restores a session from the HttpOnly refresh cookie on cold start,
+  hydrates the profile, and reacts to `refreshed`/`expired` events.
+- **Route guards**: `ProtectedRoute` (renders "Restoring your session…" instead of redirecting while
+  checking) and `PublicOnlyRoute` (keeps signed-in users out of auth screens).
+- **Open-redirect protection** (`safeRedirect`) rejecting absolute URLs, protocol-relative paths,
+  `javascript:`/`data:` schemes, control characters, and auth screens.
+- **Auth screens**: login, register (with live password strength), forgot password, reset password —
+  built on `AuthLayout` with a brand panel, `FormField` (label/`aria-invalid`/`aria-describedby`/
+  `role="alert"`), `PasswordInput` (show/hide), and `FormAlert`.
+- **Zod schemas** matching the backend's Joi rules, including the **72-byte** bcrypt limit (not just
+  72 characters).
+- **Sign-out** wired through the header profile menu, fail-safe when the network call fails.
+- **`PublicLayout`** providing the Suspense boundary the lazy auth pages need.
+
+### Fixed — Phase 3
+
+- **`PasswordInput` did not forward its ref**, so React Hook Form never read the password and every
+  auth form submitted an empty value. Now a `forwardRef` component with a regression test.
+- Backend `error.code` strings were overwriting the normalised `ApiError.code`, silently breaking the
+  `isValidationError` / `isForbidden` / … helpers. The backend code is now kept as `serverCode`.
+- `extractFieldErrors` did not unwrap the backend's `error.details[]` nesting, so field-level
+  validation errors were never mapped onto inputs.
+- The public routes had no Suspense boundary, causing "a component suspended while responding to
+  synchronous input" when lazy auth pages loaded.
+- Empty email fields produced two conflicting messages ("required" + "invalid").
+
+### Fixed — Phase 2
 
 - `Button asChild` silently lost all styles and ARIA attributes because children were wrapped in a
   fragment, which breaks Radix `Slot` prop merging. Affected every link rendered as a button.
@@ -66,4 +106,4 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - `npm run dev` serves the app; `/`, `/dashboard`, and unknown routes resolve correctly.
 - `npm run build` succeeds with per-route chunks.
-- `npm run lint`, `npm run format:check`, and `npm test` (68 tests) pass.
+- `npm run lint`, `npm run format:check`, and `npm test` (147 tests) pass.

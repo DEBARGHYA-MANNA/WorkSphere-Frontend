@@ -15,11 +15,11 @@ import { ROUTES } from '@/lib/constants'
 /**
  * Profile menu in the header.
  *
- * Sign-out is intentionally disabled until Phase 3 authenticates the session:
- * showing a working-looking control that cannot act would be dishonest. The item
- * states why it is unavailable.
+ * Sign-out is wired to the session layer (Phase 3): it revokes the refresh cookie
+ * server-side, clears the in-memory access token, drops all cached server data,
+ * and notifies sibling tabs.
  */
-export function ProfileMenu({ user, onSignOut, canSignOut = false }) {
+export function ProfileMenu({ user, onSignOut, canSignOut = true, isSigningOut = false }) {
   const name = user?.name ?? 'Account'
   const email = user?.email ?? ''
 
@@ -74,13 +74,13 @@ export function ProfileMenu({ user, onSignOut, canSignOut = false }) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"
-          disabled={!canSignOut}
+          disabled={!canSignOut || isSigningOut}
           onSelect={() => {
-            if (canSignOut) onSignOut?.()
+            if (canSignOut && !isSigningOut) onSignOut?.()
           }}
         >
           <LogOut aria-hidden="true" />
-          {canSignOut ? 'Sign out' : 'Sign out (Phase 3)'}
+          {isSigningOut ? 'Signing out…' : 'Sign out'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

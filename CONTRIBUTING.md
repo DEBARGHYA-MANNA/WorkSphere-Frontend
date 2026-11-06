@@ -56,6 +56,23 @@ Target `develop`. Each PR includes:
 - [ ] Docs updated (`README`, `API_INTEGRATION`, `CHANGELOG` as applicable)
 - [ ] No secrets, tokens, or personal data in code, logs, or fixtures
 
+## Security rules for contributors
+
+These are not negotiable; a PR that breaks them is rejected regardless of feature value.
+
+- **Never persist a token.** The access token belongs in `services/http/token-store` (memory only).
+  The refresh token belongs in the backend's HttpOnly cookie. `localStorage`/`sessionStorage` must
+  never contain either.
+- **Never read or write `document.cookie` for auth.** If you think you need to, the answer is a
+  backend change.
+- **Never `console.log` a token, password, or personal record.** Use `@/lib/logger`, which is
+  dev-only for `debug/info`.
+- **Never bypass `safeRedirect`.** Any URL that came from a query string is untrusted input.
+- **Never assume the session is valid.** The backend is the security boundary; handle `401`/`403`
+  even when the UI hides the action.
+- **Never invent an auth endpoint.** Check `/openapi.json` first; the refresh flow in particular has
+  reuse-detection semantics that a guessed flow will trip.
+
 ## Code review
 
 Solo development still requires a self-review pass: re-read the diff, run the full check suite, and

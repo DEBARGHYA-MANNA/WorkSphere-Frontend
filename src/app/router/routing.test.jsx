@@ -1,8 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { routes } from '@/app/router'
 import { QueryProvider } from '@/app/providers/query-provider'
+import { signInForTest, signOutForTest } from '../../../tests/auth-helpers'
+
+beforeEach(() => {
+  signInForTest()
+})
 
 function renderRoute(path) {
   const router = createMemoryRouter(routes, {
@@ -41,6 +46,14 @@ describe('router', () => {
   ])('renders %s with its heading', async (path, heading) => {
     renderRoute(path)
     expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
+  })
+
+  it('redirects to login with a safe return path when signed out', async () => {
+    signOutForTest()
+    renderRoute('/projects')
+
+    // The guard replaces the protected route with the login screen.
+    expect(await screen.findByRole('heading', { level: 1, name: 'Sign in' })).toBeInTheDocument()
   })
 
   it('renders a 404 page for unknown routes', async () => {

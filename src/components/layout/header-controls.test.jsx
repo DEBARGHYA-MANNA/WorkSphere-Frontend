@@ -77,18 +77,27 @@ describe('ProfileMenu', () => {
     )
   })
 
-  it('does not present sign-out as working before authentication exists', async () => {
+  it('signs out through the session layer', async () => {
     const user = userEvent.setup()
     const onSignOut = vi.fn()
-    renderInProviders(
-      <ProfileMenu user={{ name: 'Ada' }} canSignOut={false} onSignOut={onSignOut} />,
-    )
+    renderInProviders(<ProfileMenu user={{ name: 'Ada' }} onSignOut={onSignOut} />)
 
     await user.click(screen.getByRole('button', { name: /account menu/i }))
-    const signOut = await screen.findByRole('menuitem', { name: /sign out/i })
+    await user.click(await screen.findByRole('menuitem', { name: 'Sign out' }))
 
-    expect(signOut).toHaveAttribute('aria-disabled', 'true')
-    expect(signOut).toHaveTextContent('Phase 3')
+    expect(onSignOut).toHaveBeenCalledTimes(1)
+  })
+
+  it('disables sign-out while it is already in flight', async () => {
+    const user = userEvent.setup()
+    const onSignOut = vi.fn()
+    renderInProviders(<ProfileMenu user={{ name: 'Ada' }} onSignOut={onSignOut} isSigningOut />)
+
+    await user.click(screen.getByRole('button', { name: /account menu/i }))
+    const item = await screen.findByRole('menuitem', { name: 'Signing out…' })
+
+    expect(item).toHaveAttribute('aria-disabled', 'true')
+    expect(onSignOut).not.toHaveBeenCalled()
   })
 })
 

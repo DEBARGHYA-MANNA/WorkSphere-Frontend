@@ -15,3 +15,9 @@ export const NotificationsPage = lazy(
 )
 export const SettingsPage = lazy(() => import('@/features/settings/pages/settings-page'))
 export const NotFoundPage = lazy(() => import('@/features/errors/pages/not-found-page'))
+
+// Authentication (Phase 3)
+export const LoginPage = lazy(() => import('@/features/auth/pages/login-page'))
+export const RegisterPage = lazy(() => import('@/features/auth/pages/register-page'))
+export const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/forgot-password-page'))
+export const ResetPasswordPage = lazy(() => import('@/features/auth/pages/reset-password-page'))

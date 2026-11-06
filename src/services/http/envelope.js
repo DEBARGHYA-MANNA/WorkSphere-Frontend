@@ -108,6 +108,13 @@ export function extractEnvelopeMessage(body) {
 export function extractFieldErrors(body) {
   if (!body || typeof body !== 'object') return null
 
+  // Backend shape: { error: { details: [{ field, message }] } }
+  // Unwrap one level so callers get a flat field map.
+  if (body.error && typeof body.error === 'object' && body.error.details) {
+    const fromError = extractFieldErrors({ details: body.error.details })
+    if (fromError) return fromError
+  }
+
   if (body.fieldErrors && typeof body.fieldErrors === 'object') {
     const mapped = {}
     for (const [key, value] of Object.entries(body.fieldErrors)) {
