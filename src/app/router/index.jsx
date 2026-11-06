@@ -14,6 +14,9 @@ import {
   RegisterPage,
   ForgotPasswordPage,
   ResetPasswordPage,
+  OrganizationsPage,
+  OrganizationSettingsPage,
+  AcceptInvitationPage,
 } from '@/app/router/lazy-pages'
 import { RouteErrorPage } from '@/components/common/route-error-page'
 import { RootRedirect } from '@/app/router/root-redirect'
@@ -63,6 +66,10 @@ export const routes = [
           { path: ROUTES.dashboard, element: <DashboardPage /> },
           { path: ROUTES.myTasks, element: <MyTasksPage /> },
           { path: ROUTES.projects, element: <ProjectsPage /> },
+          { path: ROUTES.organizations, element: <OrganizationsPage /> },
+          { path: ROUTES.organizationSettings, element: <OrganizationSettingsPage /> },
+          // Accepting requires an authenticated session matching the invite email.
+          { path: ROUTES.acceptInvitation, element: <AcceptInvitationPage /> },
           { path: ROUTES.members, element: <MembersPage /> },
           { path: ROUTES.notifications, element: <NotificationsPage /> },
           { path: ROUTES.settings, element: <SettingsPage /> },

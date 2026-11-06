@@ -26,6 +26,7 @@ export const ROUTES = Object.freeze({
 
   // Protected
   dashboard: '/dashboard',
+  organizations: '/organizations',
   myTasks: '/my-tasks',
   projects: '/projects',
   projectDetails: '/projects/:projectId',

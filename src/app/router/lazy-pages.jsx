@@ -21,3 +21,14 @@ export const LoginPage = lazy(() => import('@/features/auth/pages/login-page'))
 export const RegisterPage = lazy(() => import('@/features/auth/pages/register-page'))
 export const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/forgot-password-page'))
 export const ResetPasswordPage = lazy(() => import('@/features/auth/pages/reset-password-page'))
+
+// Organizations (Phase 4)
+export const OrganizationsPage = lazy(
+  () => import('@/features/organizations/pages/organizations-page'),
+)
+export const OrganizationSettingsPage = lazy(
+  () => import('@/features/organizations/pages/organization-settings-page'),
+)
+export const AcceptInvitationPage = lazy(
+  () => import('@/features/organizations/pages/accept-invitation-page'),
+)

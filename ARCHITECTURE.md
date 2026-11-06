@@ -136,15 +136,24 @@ boundary.
 | Shared nav rows (active state, tooltips)        | `components/layout/sidebar-nav.jsx`                 |
 | Header cluster                                  | `components/layout/app-header.jsx` and siblings     |
 | Organization context                            | `features/organizations/hooks/use-organizations.js` |
+| Organization switching / deletion mutations     | same file                                           |
+| Invitations (list, create, revoke, accept)      | `features/organizations/hooks/use-invitations.js`   |
 
 Navigation metadata (`PRIMARY_NAV`, `SETTINGS_NAV`, `isRouteActive`) is plain data in
 `app/router/route-paths.js`; icons are resolved through an explicit registry
 (`app/router/icons.js`) so tree-shaking still works and tests stay React-free.
 
-**Organization context** is deliberately gated. `useOrganizations` returns an empty, clearly
-labelled result while organization management is unbuilt (Phase 4); the shell then shows an honest
-"no organization" state. The hook's return shape will not change when the real query lands, so no
-shell component needs editing.
+**Organization context** is real as of Phase 4. `useOrganizations` reads
+`GET /organizations` and resolves the active organization from the UI store's
+`activeOrganizationId`, which is a _hint_ rather than an authority: if that id is no longer among the
+caller's memberships (removed, revoked, or set on another device) it falls back to the first
+membership instead of rendering a dead id. Switching calls `POST /organizations/:id/switch` to confirm
+access — the endpoint mints no token, because the tenant travels in the URL — and then removes every
+tenant-scoped query key so nothing from the previous organization can surface.
+
+**Role awareness** is UX only. `src/lib/permissions.js` mirrors the backend matrix so controls the
+user cannot use are hidden or disabled, but the backend authorises every request and the UI still
+handles `403` on its own.
 
 ## Accessibility baseline
 

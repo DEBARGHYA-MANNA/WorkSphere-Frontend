@@ -1,11 +1,26 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { routes } from '@/app/router'
 import { QueryProvider } from '@/app/providers/query-provider'
 import { useUiStore } from '@/stores/ui-store'
 import { signInForTest } from '../../../tests/auth-helpers'
+
+// The shell renders real organization data; keep these layout tests off the network.
+const listOrganizations = vi.fn(async () => ({ items: [], total: 0 }))
+const switchOrganization = vi.fn(async (id) => ({ organization: { id }, membership: {} }))
+
+// The hooks import the default export, so both must point at the same stub.
+vi.mock('@/services/organization-service', async (importOriginal) => {
+  const actual = await importOriginal()
+  const stubbed = {
+    ...actual.organizationService,
+    list: (...args) => listOrganizations(...args),
+    switch: (...args) => switchOrganization(...args),
+  }
+  return { ...actual, organizationService: stubbed, default: stubbed }
+})
 
 function renderShell(path = '/dashboard') {
   const router = createMemoryRouter(routes, {
@@ -20,7 +35,16 @@ function renderShell(path = '/dashboard') {
 }
 
 beforeEach(() => {
-  useUiStore.setState({ sidebarCollapsed: false, mobileNavOpen: false, theme: 'system' })
+  listOrganizations.mockReset()
+  listOrganizations.mockResolvedValue({ items: [], total: 0 })
+  switchOrganization.mockReset()
+  switchOrganization.mockResolvedValue({ organization: { id: 'x' }, membership: {} })
+  useUiStore.setState({
+    sidebarCollapsed: false,
+    mobileNavOpen: false,
+    theme: 'system',
+    activeOrganizationId: null,
+  })
   // The shell sits behind ProtectedRoute, so a session must exist.
   signInForTest()
 })
@@ -151,7 +175,7 @@ describe('AppShell organization context', () => {
     await screen.findByRole('heading', { level: 1, name: 'Dashboard' })
 
     const sidebar = screen.getByRole('complementary', { name: 'Sidebar' })
-    const switcher = within(sidebar).getByRole('button', { name: 'Select organization' })
+    const switcher = await within(sidebar).findByRole('button', { name: 'Select organization' })
     expect(switcher).toHaveTextContent('No organization')
   })
 
@@ -161,11 +185,60 @@ describe('AppShell organization context', () => {
     await screen.findByRole('heading', { level: 1, name: 'Dashboard' })
 
     const sidebar = screen.getByRole('complementary', { name: 'Sidebar' })
-    await user.click(within(sidebar).getByRole('button', { name: 'Select organization' }))
+    await user.click(await within(sidebar).findByRole('button', { name: 'Select organization' }))
 
     expect(
       await screen.findByText('You are not a member of any organization yet.'),
     ).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: 'Create organization' })).toBeInTheDocument()
+  })
+
+  it('lists memberships once loaded and switches the active organization', async () => {
+    listOrganizations.mockResolvedValue({
+      items: [
+        { id: 'org-1', name: 'Acme Studio', role: 'Owner' },
+        { id: 'org-2', name: 'Globex', role: 'Member' },
+      ],
+      total: 2,
+    })
+    const user = userEvent.setup()
+    renderShell()
+    await screen.findByRole('heading', { level: 1, name: 'Dashboard' })
+
+    const sidebar = screen.getByRole('complementary', { name: 'Sidebar' })
+    const switcher = await within(sidebar).findByRole('button', {
+      name: 'Current organization: Acme Studio. Change organization',
+    })
+    expect(switcher).toHaveTextContent('Owner')
+
+    await user.click(switcher)
+    await user.click(await screen.findByRole('menuitem', { name: /Globex/ }))
+
+    await waitFor(() => expect(switchOrganization).toHaveBeenCalledWith('org-2'))
+    expect(
+      await within(screen.getByRole('complementary', { name: 'Sidebar' })).findByRole('button', {
+        name: 'Current organization: Globex. Change organization',
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('does not call the switch endpoint when the active organization is re-selected', async () => {
+    listOrganizations.mockResolvedValue({
+      items: [{ id: 'org-1', name: 'Acme Studio', role: 'Owner' }],
+      total: 1,
+    })
+    const user = userEvent.setup()
+    renderShell()
+    await screen.findByRole('heading', { level: 1, name: 'Dashboard' })
+
+    const sidebar = screen.getByRole('complementary', { name: 'Sidebar' })
+    await user.click(
+      await within(sidebar).findByRole('button', {
+        name: 'Current organization: Acme Studio. Change organization',
+      }),
+    )
+    await user.click(await screen.findByRole('menuitem', { name: /Acme Studio/ }))
+
+    expect(switchOrganization).not.toHaveBeenCalled()
   })
 })

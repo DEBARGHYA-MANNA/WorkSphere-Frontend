@@ -9,6 +9,8 @@ const SEGMENT_LABELS = {
   dashboard: 'Dashboard',
   'my-tasks': 'My Tasks',
   projects: 'Projects',
+  organizations: 'Organizations',
+  'accept-invitation': 'Accept invitation',
   tasks: 'Tasks',
   members: 'Team Members',
   notifications: 'Notifications',
@@ -61,4 +63,9 @@ export function buildBreadcrumbs(pathname = '/', labels = {}) {
 }
 
 /** Sections that should never render a breadcrumb trail (they are roots). */
-export const BREADCRUMB_ROOTS = new Set([ROUTES.dashboard, ROUTES.myTasks, ROUTES.projects])
+export const BREADCRUMB_ROOTS = new Set([
+  ROUTES.dashboard,
+  ROUTES.myTasks,
+  ROUTES.projects,
+  ROUTES.organizations,
+])

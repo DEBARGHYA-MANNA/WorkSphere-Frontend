@@ -16,8 +16,8 @@ through its published OpenAPI contract.
 | 1     | Project foundation                  | ✅ Complete |
 | 2     | Design system and dashboard shell   | ✅ Complete |
 | 3     | Authentication and session handling | ✅ Complete |
-| 4     | Organization management             | Next        |
-| 5     | Team management                     | Pending     |
+| 4     | Organization management             | ✅ Complete |
+| 5     | Team management                     | Next        |
 | 6     | Project management                  | Pending     |
 | 7     | Task management                     | Pending     |
 | 8     | Kanban and calendar views           | Pending     |
@@ -164,9 +164,11 @@ Tokens live in `src/styles/globals.css` as HSL channel triplets and are wired in
   Collapsed items expose their label through a tooltip and `sr-only` text.
 - **Mobile drawer.** Below `lg` the sidebar becomes a full-height sheet with 44px touch rows; it
   closes on navigation and restores focus to the trigger.
-- **Organization switcher.** Shows the active organization and role, switch list, and a
-  "Create organization" entry. While the API query is intentionally disabled (Phase 4 wires it), it
-  renders a truthful "No organization" state — never a placeholder company.
+- **Organization switcher.** Backed by `GET /organizations` (Phase 4). Shows the active organization
+  and role, every membership to switch to, and a "Create organization" dialog. Switching calls
+  `POST /organizations/:id/switch` to confirm membership, then drops every tenant-scoped query so no
+  data from the previous organization can be shown. With no memberships it renders a truthful
+  "No organization" state — never a placeholder company.
 - **Breadcrumbs.** Built from the pathname; 24-char object ids are never shown raw — the owning page
   supplies a real label. Hidden on root sections where the page title already says where you are.
 - **Theme switcher.** Explicit light / dark / system menu, not a two-state toggle.

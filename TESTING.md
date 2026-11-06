@@ -63,6 +63,24 @@ the child element (a regression guard for the Radix `Slot` fragment bug).
 `tests/auth-helpers.js` provides `signInForTest` / `signOutForTest` / `resetAuthForTest` so specs can
 seed a session without touching the network.
 
+### Organization coverage (Phase 4)
+
+| Area                  | Spec                                            | Notable assertions                                                                                                                                                                                                                   |
+| --------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Permission matrix     | `lib/permissions.test.js`                       | Owner has everything incl. delete; Admin lacks delete; Manager lacks `member:manage_roles`; Viewer is read-only; Owner can never be assigned; `assignableRolesFor` per role                                                          |
+| Service normalisation | `services/organization-service.test.js`         | `withId` maps `_id`→`id`, never overwrites a real `id`, passes primitives through; envelope unwrapping                                                                                                                               |
+| Validation parity     | `schemas/organization-schemas.test.js`          | name 2–120 + slug-able, description ≤ 2000, `defaultMemberRole` limited to Member/Viewer, `PATCH` requires ≥ 1 field, invite email ≤ 254, `Owner` cannot be invited                                                                  |
+| Organization list     | `features/organizations/organizations.test.jsx` | memberships rendered with the current one marked, empty state, error + retry refetch, switch calls the endpoint and updates the active context, `409` on create mapped to the name field                                             |
+| Settings              | same                                            | details + pending invitations, Viewer sees no danger zone or invite control, revoke requires confirmation, invite `409 ALREADY_A_MEMBER` / `403 INVITATIONS_DISABLED` mapping                                                        |
+| Honest invite copy    | same                                            | success view never claims an email was sent and offers **no** copy-link control, because the API never returns the token                                                                                                             |
+| Accept invitation     | same                                            | token prefilled from `?token=`, shape validated before the request, `INVALID_INVITATION` / `ALREADY_A_MEMBER` / `EMAIL_VERIFICATION_REQUIRED` explained, success activates the organization, signed-out visitors are sent to sign-in |
+| Shell switcher        | `app/layouts/app-shell.test.jsx`                | real memberships listed, switching calls `POST /switch`, re-selecting the current organization does not call it                                                                                                                      |
+
+Organization specs mount the real router and pages and stub only
+`@/services/organization-service` and `@/services/invitation-service`, so hooks, the query cache, and
+tenant-switch side effects are exercised. Failure-path tests pass `{ retry: false }` to the query
+client — the production policy intentionally retries 5xx twice with backoff.
+
 ### Example
 
 ```jsx
