@@ -1,0 +1,297 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Design tokens
+   --------------------------------------------------------------------------
+   Every colour used in the app resolves from one of these custom properties
+   (wired into Tailwind's theme in tailwind.config.js). Components never use
+   raw hex values, so re-theming only touches this file.
+
+   Tokens are HSL channel triplets ("H S% L%") so Tailwind can apply opacity
+   modifiers, e.g. `bg-primary/10`, without colour-mix surprises.
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* Typography */
+    --font-sans:
+      'Inter var', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    --font-mono:
+      ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, 'Liberation Mono',
+      monospace;
+
+    /* Radius scale */
+    --radius: 0.625rem;
+
+    /* Elevation shadow colour */
+    --shadow-color: 228 30% 12%;
+
+    /* --- Light theme ---------------------------------------------------- */
+    --background: 220 33% 99%;
+    --foreground: 225 24% 12%;
+
+    --surface: 0 0% 100%;
+    --surface-muted: 220 24% 97%;
+    --surface-raised: 0 0% 100%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 225 24% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 24% 12%;
+
+    --muted: 220 20% 96%;
+    --muted-foreground: 225 12% 45%;
+
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --primary-muted: 243 92% 96%;
+
+    --secondary: 220 20% 96%;
+    --secondary-foreground: 225 24% 16%;
+
+    --accent: 243 76% 96%;
+    --accent-foreground: 245 62% 40%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-muted: 0 86% 97%;
+
+    --success: 152 66% 36%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 150 62% 95%;
+
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+    --warning-muted: 38 96% 95%;
+
+    --info: 205 86% 45%;
+    --info-foreground: 0 0% 100%;
+    --info-muted: 205 90% 95%;
+
+    --border: 222 18% 90%;
+    --input: 222 18% 88%;
+    --ring: 243 75% 59%;
+
+    /* Sidebar (light) — slightly tinted so it reads as chrome, not content. */
+    --sidebar: 220 26% 98%;
+    --sidebar-foreground: 225 24% 18%;
+    --sidebar-muted: 225 12% 46%;
+    --sidebar-border: 222 18% 91%;
+    --sidebar-accent: 243 76% 96%;
+    --sidebar-accent-foreground: 245 62% 40%;
+
+    --chart-1: 243 75% 59%;
+    --chart-2: 174 62% 42%;
+    --chart-3: 32 95% 52%;
+    --chart-4: 205 86% 52%;
+    --chart-5: 340 76% 58%;
+  }
+
+  .dark {
+    --shadow-color: 228 40% 2%;
+
+    --background: 228 20% 7%;
+    --foreground: 220 20% 96%;
+
+    --surface: 228 18% 9%;
+    --surface-muted: 228 16% 12%;
+    --surface-raised: 228 16% 11%;
+
+    --card: 228 18% 10%;
+    --card-foreground: 220 20% 96%;
+
+    --popover: 228 18% 10%;
+    --popover-foreground: 220 20% 96%;
+
+    --muted: 228 14% 15%;
+    --muted-foreground: 222 12% 65%;
+
+    --primary: 243 86% 70%;
+    --primary-foreground: 228 30% 10%;
+    --primary-muted: 243 40% 20%;
+
+    --secondary: 228 14% 16%;
+    --secondary-foreground: 220 20% 94%;
+
+    --accent: 243 32% 20%;
+    --accent-foreground: 243 90% 86%;
+
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-muted: 0 40% 18%;
+
+    --success: 152 56% 46%;
+    --success-foreground: 150 60% 8%;
+    --success-muted: 152 34% 17%;
+
+    --warning: 32 92% 56%;
+    --warning-foreground: 30 60% 8%;
+    --warning-muted: 32 40% 18%;
+
+    --info: 205 84% 60%;
+    --info-foreground: 205 60% 8%;
+    --info-muted: 205 40% 18%;
+
+    --border: 228 12% 19%;
+    --input: 228 12% 23%;
+    --ring: 243 86% 70%;
+
+    --sidebar: 228 22% 6%;
+    --sidebar-foreground: 220 20% 92%;
+    --sidebar-muted: 222 10% 60%;
+    --sidebar-border: 228 12% 16%;
+    --sidebar-accent: 243 32% 18%;
+    --sidebar-accent-foreground: 243 90% 86%;
+
+    --chart-1: 243 86% 72%;
+    --chart-2: 174 62% 52%;
+    --chart-3: 32 92% 60%;
+    --chart-4: 205 84% 64%;
+    --chart-5: 340 76% 66%;
+  }
+
+  /* ---------------------------------------------------------------------
+     Base element styles
+     --------------------------------------------------------------------- */
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings:
+      'cv11' 1,
+      'ss01' 1;
+    font-variant-ligatures: contextual;
+  }
+
+  /* Consistent, always-visible focus treatment for keyboard users. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Remove the default ring when a component supplies its own. */
+  [data-focus-ring='custom']:focus-visible {
+    @apply ring-0 ring-offset-0;
+  }
+
+  ::selection {
+    @apply bg-primary/25 text-foreground;
+  }
+
+  /* Scrollbars: subtle, theme-aware. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Headings share one rhythm across the app. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-semibold tracking-tight text-foreground;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Respect the user's motion preference everywhere. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Focus ring helper for elements that are not native buttons/inputs. */
+  .focus-ring {
+    @apply outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  /* Standard page shell inner width + rhythm. */
+  .page-container {
+    @apply mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8;
+  }
+
+  /* Muted surface used for panels inside cards and empty states. */
+  .surface-panel {
+    @apply rounded-lg border border-border bg-surface-muted/60;
+  }
+
+  /* Skip link — visible only when focused. */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Hide scrollbars but keep scrolling (used by horizontal tab strips). */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Screen-reader-only that becomes visible on focus (skip links). */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
