@@ -12,6 +12,7 @@ export default function MyTasksPage() {
         'Sort by due date, priority, and recency',
         'Inline status and assignee updates',
       ]}
+      dependency="GET /organizations/:organizationId/tasks/my — supports page, limit, q, status, priority, label, dueAfter, dueBefore, sort, order."
     />
   )
 }

@@ -13,6 +13,7 @@ export default function DashboardPage() {
         'Productivity trend charts with date filters',
         'Recent activity feed',
       ]}
+      dependency="GET /organizations/:organizationId/analytics (overview, taskDistribution, productivity) and GET /organizations/:organizationId/activity."
     />
   )
 }

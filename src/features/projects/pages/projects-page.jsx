@@ -12,6 +12,7 @@ export default function ProjectsPage() {
         'Visibility and status filters',
         'Project membership management',
       ]}
+      dependency="GET /organizations/:organizationId/projects — supports page, limit, q, status, visibility, archived, dueAfter, dueBefore, sort, order."
     />
   )
 }

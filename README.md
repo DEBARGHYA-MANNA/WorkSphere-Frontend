@@ -14,8 +14,8 @@ through its published OpenAPI contract.
 | Phase | Scope                               | State       |
 | ----- | ----------------------------------- | ----------- |
 | 1     | Project foundation                  | ✅ Complete |
-| 2     | Design system and dashboard shell   | Next        |
-| 3     | Authentication and session handling | Pending     |
+| 2     | Design system and dashboard shell   | ✅ Complete |
+| 3     | Authentication and session handling | Next        |
 | 4     | Organization management             | Pending     |
 | 5     | Team management                     | Pending     |
 | 6     | Project management                  | Pending     |
@@ -85,8 +85,10 @@ src/
 │   ├── providers/            # Theme + TanStack Query providers
 │   └── router/               # Route table, lazy pages, nav metadata
 ├── components/
-│   ├── ui/                   # shadcn/ui primitives (Button, Badge, …)
-│   └── common/               # Cross-feature building blocks
+│   ├── ui/                   # shadcn/ui primitives (Button, Badge, Dialog, Sheet, …)
+│   ├── common/               # PageHeader, EmptyState, Logo, UserAvatar, ErrorBoundary
+│   └── layout/               # AppSidebar, AppHeader, MobileNav, Breadcrumbs,
+│                             # OrganizationSwitcher, ThemeToggle, ProfileMenu
 ├── features/                 # Feature slices (pages, components, hooks, api)
 │   ├── dashboard/ auth/ organizations/ members/ projects/ tasks/
 │   └── comments/ notifications/ activity/ analytics/ settings/ errors/
@@ -116,6 +118,39 @@ Tokens live in `src/styles/globals.css` as HSL channel triplets and are wired in
   applied before first paint to avoid a flash.
 - Radius, elevation (`shadow-xs … shadow-lg`), focus ring, and motion tokens are shared.
 - `prefers-reduced-motion` is honoured globally.
+
+### Dashboard shell
+
+```text
+┌──────────────────┬────────────────────────────────────────────┐
+│ sidebar (lg+)    │ header (sticky): breadcrumbs · search*      │
+│ logo             │                  notifications · theme · me  │
+│ org switcher  ⌄  ├────────────────────────────────────────────┤
+│ dashboard        │ <main id="main-content"> routed page        │
+│ my tasks         │                                            │
+│ projects         │                                            │
+│ team members     │                                            │
+│ notifications    │                                            │
+│ settings         │                                            │
+│ ── workspace ──  │                                            │
+│ profile / org /  │                                            │
+│ appearance  [«]  │                                            │
+└──────────────────┴────────────────────────────────────────────┘
+```
+
+- **Collapsible rail.** Collapsing stores icons only; the preference persists in `localStorage`.
+  Collapsed items expose their label through a tooltip and `sr-only` text.
+- **Mobile drawer.** Below `lg` the sidebar becomes a full-height sheet with 44px touch rows; it
+  closes on navigation and restores focus to the trigger.
+- **Organization switcher.** Shows the active organization and role, switch list, and a
+  "Create organization" entry. While the API query is intentionally disabled (Phase 4 wires it), it
+  renders a truthful "No organization" state — never a placeholder company.
+- **Breadcrumbs.** Built from the pathname; 24-char object ids are never shown raw — the owning page
+  supplies a real label. Hidden on root sections where the page title already says where you are.
+- **Theme switcher.** Explicit light / dark / system menu, not a two-state toggle.
+- **Global search (\*).** Rendered `aria-disabled` with a tooltip explaining that the API exposes no
+  cross-resource search endpoint. It is not simulated.
+- **Focus management.** Navigation moves focus to `<main>`; the initial page load does not steal it.
 
 See [COMPONENT_GUIDELINES.md](./COMPONENT_GUIDELINES.md) for contribution rules.
 

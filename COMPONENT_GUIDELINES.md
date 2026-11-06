@@ -60,6 +60,38 @@ import { Button } from '@/components/ui/button'
 - Use `loading` for async actions instead of swapping the label manually.
 - `asChild` delegates rendering (Links, labels) while keeping styles.
 
+### Layout components
+
+Compose pages from these instead of hand-rolling chrome:
+
+| Component    | Use                                                                                       |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| `PageHeader` | Every page title row: `title`, `description`, `actions`, plus `children` for filters/tabs |
+| `Section`    | A titled block inside a page (`space-y-4` rhythm built in)                                |
+| `EmptyState` | Empty list/area: icon, title, description, one primary action                             |
+| `UserAvatar` | Person avatar with initials fallback; sizes `xs…lg`                                       |
+| `Logo`       | Wordmark + glyph, `showText={false}` for the collapsed rail                               |
+
+`PageHeader` renders a `<div>`, not a `<header>`: the app header is the single `banner` landmark.
+Using `<header>` inside page content creates a second banner region and confuses screen-reader
+landmark navigation.
+
+### `asChild` and Radix Slot
+
+`Button asChild` delegates rendering to **exactly one** child element so Radix `Slot` can merge the
+button's `className` and `aria-*` onto it:
+
+```jsx
+<Button asChild variant="ghost" size="icon" aria-label="Notifications">
+  <Link to="/notifications">
+    <Bell />
+  </Link>
+</Button>
+```
+
+Never wrap the child in a fragment or add a sibling element — `Slot` then merges onto the wrong
+node and the styles silently disappear. That is why `loading` is ignored on the `asChild` path.
+
 ### Layout rhythm
 
 - Page container: `<div className="page-container">` (max width + responsive padding).

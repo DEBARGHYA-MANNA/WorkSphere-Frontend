@@ -1,17 +1,9 @@
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
-/** Shimmering block used by skeletons. */
-export function Skeleton({ className, ...props }) {
-  return (
-    <div
-      className={cn('relative overflow-hidden rounded-md bg-muted', className)}
-      aria-hidden="true"
-      {...props}
-    >
-      <span className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-foreground/[0.06] to-transparent" />
-    </div>
-  )
-}
+// Re-exported for convenience so callers can import the whole skeleton family
+// from one place.
+export { Skeleton }
 
 /**
  * Route-level suspense fallback: reserves the shape of a page so navigation

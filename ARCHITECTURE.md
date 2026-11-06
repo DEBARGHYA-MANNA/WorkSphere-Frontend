@@ -89,6 +89,28 @@ rejection into an `ApiError` with `{ status, code, message, details, requestId }
 - Memoised expensive tables/charts; virtualisation only if measurements demand it.
 - Zod schemas are shared between forms and (where useful) response validation.
 
+## Application shell
+
+`app/layouts/app-shell.jsx` owns the authenticated chrome and nothing else:
+
+| Concern                                         | Where                                               |
+| ----------------------------------------------- | --------------------------------------------------- |
+| Layout skeleton, focus and scroll on navigation | `app-shell.jsx`                                     |
+| Desktop rail + collapse toggle                  | `components/layout/app-sidebar.jsx`                 |
+| Mobile drawer                                   | `components/layout/mobile-nav.jsx`                  |
+| Shared nav rows (active state, tooltips)        | `components/layout/sidebar-nav.jsx`                 |
+| Header cluster                                  | `components/layout/app-header.jsx` and siblings     |
+| Organization context                            | `features/organizations/hooks/use-organizations.js` |
+
+Navigation metadata (`PRIMARY_NAV`, `SETTINGS_NAV`, `isRouteActive`) is plain data in
+`app/router/route-paths.js`; icons are resolved through an explicit registry
+(`app/router/icons.js`) so tree-shaking still works and tests stay React-free.
+
+**Organization context** is deliberately gated. `useOrganizations` returns an empty, clearly
+labelled result while organization management is unbuilt (Phase 4); the shell then shows an honest
+"no organization" state. The hook's return shape will not change when the real query lands, so no
+shell component needs editing.
+
 ## Accessibility baseline
 
 - Landmarks: `aside[aria-label]`, `header`, `main#main-content`, skip link.
