@@ -94,6 +94,34 @@ returns `data.emailVerificationRequired: false` and login succeeds immediately. 
 - keeps `POST /auth/verify-email` and `POST /auth/resend-verification` wired for when a mail
   transport is configured. No token is ever expected in an API response.
 
+### Verified against the backend implementation
+
+| Detail              | Value                                                                              | Source                             |
+| ------------------- | ---------------------------------------------------------------------------------- | ---------------------------------- |
+| Refresh cookie name | `worksphereRefreshToken`                                                           | `src/modules/auth/auth.cookies.js` |
+| Cookie scope        | `Path=/api/v1/auth`, `HttpOnly`, `SameSite=lax` (default), `Secure` in production  | same                               |
+| Login response      | `{ accessToken, tokenType: 'Bearer', accessTokenExpiresIn, user }`                 | `auth.controller.js`               |
+| Register response   | `{ user, emailVerificationRequired }` (201)                                        | same                               |
+| Invalid credentials | `401 { error: { code: 'INVALID_CREDENTIALS' } }`                                   | `auth.service.js`                  |
+| Duplicate email     | `409`                                                                              | `auth.service.js`                  |
+| Validation failure  | `400 { error: { code: 'VALIDATION_ERROR', details: [{ field, message, type }] } }` | `middlewares/validate.js`          |
+| Auth rate limit     | 20 requests / 15 min → `429 RATE_LIMITED`                                          | `auth.routes.js`                   |
+| Password policy     | 12–72 chars **and** ≤ 72 UTF-8 bytes (bcrypt)                                      | `auth.validation.js`               |
+| One-time token      | 32–256 chars, `/^[A-Za-z0-9_-]+$/`                                                 | same                               |
+| CORS                | `credentials: true`, origin allowlist from `CORS_ORIGIN`                           | `app.js`                           |
+
+Because the cookie is `SameSite=lax` and path-scoped, the frontend is served **same-origin** with the
+API behind `/api`. The proxy is not a convenience — a cross-origin setup would require
+`SameSite=None; Secure` on the backend.
+
+### Refresh-token reuse detection
+
+The backend treats a reused refresh token as a compromise: it revokes the whole session family
+(`REFRESH_TOKEN_REUSE`). The client must therefore never refresh concurrently. `services/http/
+interceptors.js` keeps a single in-flight refresh promise that every waiting `401` joins, and retries
+each request **once**. This is the single most important detail in the auth layer and is covered by a
+dedicated test that fires three parallel 401s and asserts exactly one `/auth/refresh` call.
+
 ## Endpoint map (from the OpenAPI document)
 
 | Area          | Endpoints                                                                                                                                                                                     |

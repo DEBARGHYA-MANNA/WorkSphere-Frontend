@@ -7,6 +7,8 @@ import { PageSkeleton } from '@/components/common/page-skeleton'
 import { ErrorBoundary } from '@/components/common/error-boundary'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useOrganizations } from '@/features/organizations/hooks/use-organizations'
+import { useLogout } from '@/features/auth/hooks/use-session'
+import { useAuthStore } from '@/features/auth/auth-store'
 import { useUiStore } from '@/stores/ui-store'
 
 /**
@@ -38,6 +40,9 @@ export function AppShell() {
     selectOrganization,
     isLoading: isLoadingOrganizations,
   } = useOrganizations()
+
+  const user = useAuthStore((state) => state.user)
+  const logout = useLogout()
 
   const mainRef = useRef(null)
   // Tracks the pathname we last handled. Focus is only moved when this differs,
@@ -92,7 +97,13 @@ export function AppShell() {
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <AppHeader onOpenMobileNav={openMobileNav} />
+          <AppHeader
+            onOpenMobileNav={openMobileNav}
+            user={user}
+            onSignOut={logout}
+            isSigningOut={false}
+            canSignOut
+          />
 
           <main
             id="main-content"

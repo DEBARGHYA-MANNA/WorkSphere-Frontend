@@ -89,6 +89,41 @@ rejection into an `ApiError` with `{ status, code, message, details, requestId }
 - Memoised expensive tables/charts; virtualisation only if measurements demand it.
 - Zod schemas are shared between forms and (where useful) response validation.
 
+## Authentication and session lifecycle
+
+```text
+cold start
+   │
+   ├─ access token in memory? ──yes──► GET /users/me ──► authenticated
+   │                                  └─fail─► unauthenticated
+   │no
+   └─ POST /auth/refresh (HttpOnly cookie, withCredentials)
+          ├─200 { accessToken } ──► GET /users/me ──► authenticated
+          └─401 ──► unauthenticated   (normal for first-time visitors)
+```
+
+**Token placement**
+
+| Credential      | Where it lives                              | Why                                                          |
+| --------------- | ------------------------------------------- | ------------------------------------------------------------ |
+| Access token    | module memory (`services/http/token-store`) | unreadable after XSS-driven storage scraping, gone on reload |
+| Refresh token   | HttpOnly cookie, `Path=/api/v1/auth`        | JavaScript can never read it                                 |
+| User profile    | `features/auth/auth-store`                  | it _is_ the session, not a cached list                       |
+| Everything else | TanStack Query                              | server-owned                                                 |
+
+**401 handling** (`services/http/interceptors.js`)
+
+1. A `401` on a protected request marks the attempt and joins the single-flight refresh promise.
+2. Exactly one `POST /auth/refresh` runs; every waiting request then retries **once** with the new
+   token.
+3. If refresh fails: the token is cleared, an `expired` event fires, the auth store clears, and the
+   TanStack cache is dropped (it belonged to that session). The guard then routes to `/login`.
+4. Refresh/login/register/logout are exempt from the retry path, so a bad password cannot loop.
+
+Retrying a request more than once would turn a dead session into a request storm, so `_retried`
+guards each request. Access tokens are refreshed one minute before expiry to avoid racing the
+boundary.
+
 ## Application shell
 
 `app/layouts/app-shell.jsx` owns the authenticated chrome and nothing else:

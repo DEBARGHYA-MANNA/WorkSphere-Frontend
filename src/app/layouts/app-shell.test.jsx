@@ -5,6 +5,7 @@ import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { routes } from '@/app/router'
 import { QueryProvider } from '@/app/providers/query-provider'
 import { useUiStore } from '@/stores/ui-store'
+import { signInForTest } from '../../../tests/auth-helpers'
 
 function renderShell(path = '/dashboard') {
   const router = createMemoryRouter(routes, {
@@ -20,6 +21,8 @@ function renderShell(path = '/dashboard') {
 
 beforeEach(() => {
   useUiStore.setState({ sidebarCollapsed: false, mobileNavOpen: false, theme: 'system' })
+  // The shell sits behind ProtectedRoute, so a session must exist.
+  signInForTest()
 })
 
 describe('AppShell layout', () => {

@@ -1,5 +1,6 @@
-import { Outlet, createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import { AppShell } from '@/app/layouts/app-shell'
+import { PublicLayout } from '@/app/layouts/public-layout'
 import { ROUTES } from '@/lib/constants'
 import {
   DashboardPage,
@@ -9,23 +10,42 @@ import {
   NotificationsPage,
   SettingsPage,
   NotFoundPage,
+  LoginPage,
+  RegisterPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
 } from '@/app/router/lazy-pages'
 import { RouteErrorPage } from '@/components/common/route-error-page'
 import { RootRedirect } from '@/app/router/root-redirect'
+import { ProtectedRoute, PublicOnlyRoute } from '@/features/auth/components/protected-route'
 
 /**
  * Router configuration.
  *
- * Public routes are wrapped in their own layout; protected routes sit under
- * `AppShell`. Authentication guards are introduced in Phase 3 — until then the
- * shell renders so the layout can be reviewed.
+ * Route classes
+ *  - Public-only (`PublicOnlyRoute`): auth screens; a signed-in visitor is
+ *    forwarded to their intended destination instead of seeing a login form.
+ *  - Protected (`ProtectedRoute`): everything behind the app shell. While the
+ *    refresh cookie is being checked the guard renders a status region rather
+ *    than redirecting, which is what prevents redirect loops on reload.
+ *  - Fallback: `*` renders the 404 page inside the shell when authenticated.
  */
 export const routes = [
   {
-    // Public layout — authentication screens are added in Phase 3.
-    element: <Outlet />,
+    element: <PublicOnlyRoute />,
     errorElement: <RouteErrorPage />,
-    children: [],
+    children: [
+      {
+        element: <PublicLayout />,
+        errorElement: <RouteErrorPage />,
+        children: [
+          { path: ROUTES.login, element: <LoginPage /> },
+          { path: ROUTES.register, element: <RegisterPage /> },
+          { path: ROUTES.forgotPassword, element: <ForgotPasswordPage /> },
+          { path: ROUTES.resetPassword, element: <ResetPasswordPage /> },
+        ],
+      },
+    ],
   },
   {
     path: ROUTES.root,
@@ -33,18 +53,24 @@ export const routes = [
     errorElement: <RouteErrorPage />,
   },
   {
-    element: <AppShell />,
+    element: <ProtectedRoute />,
     errorElement: <RouteErrorPage />,
     children: [
-      { path: ROUTES.dashboard, element: <DashboardPage /> },
-      { path: ROUTES.myTasks, element: <MyTasksPage /> },
-      { path: ROUTES.projects, element: <ProjectsPage /> },
-      { path: ROUTES.members, element: <MembersPage /> },
-      { path: ROUTES.notifications, element: <NotificationsPage /> },
-      { path: ROUTES.settings, element: <SettingsPage /> },
-      { path: ROUTES.settings + '/:section', element: <SettingsPage /> },
-      { path: ROUTES.notFound, element: <NotFoundPage /> },
-      { path: '*', element: <NotFoundPage /> },
+      {
+        element: <AppShell />,
+        errorElement: <RouteErrorPage />,
+        children: [
+          { path: ROUTES.dashboard, element: <DashboardPage /> },
+          { path: ROUTES.myTasks, element: <MyTasksPage /> },
+          { path: ROUTES.projects, element: <ProjectsPage /> },
+          { path: ROUTES.members, element: <MembersPage /> },
+          { path: ROUTES.notifications, element: <NotificationsPage /> },
+          { path: ROUTES.settings, element: <SettingsPage /> },
+          { path: `${ROUTES.settings}/:section`, element: <SettingsPage /> },
+          { path: ROUTES.notFound, element: <NotFoundPage /> },
+          { path: '*', element: <NotFoundPage /> },
+        ],
+      },
     ],
   },
 ]

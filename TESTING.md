@@ -49,6 +49,20 @@ that raw 24-character object ids never render, and `aria-current` on the last cr
 `src/components/ui/button.test.jsx` pins the `asChild` contract: styles and ARIA props must land on
 the child element (a regression guard for the Radix `Slot` fragment bug).
 
+### Authentication coverage (Phase 3)
+
+| Area                 | Spec                                 | Notable assertions                                                                                                                                                                                                                                                                                                               |
+| -------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Refresh concurrency  | `services/http/interceptors.test.js` | three parallel 401s → **one** `/auth/refresh`; one retry per request; no refresh for login/refresh; session cleared + `expired` event on failure; recovery after a failed refresh                                                                                                                                                |
+| Error normalisation  | same                                 | cancel/timeout/network mapping; field errors + request id; **5xx internals never surfaced**                                                                                                                                                                                                                                      |
+| Open-redirect safety | `features/auth/redirect.test.js`     | 18 cases incl. `//host`, `/\host`, `javascript:`, control chars, traversal                                                                                                                                                                                                                                                       |
+| Validation parity    | `schemas/auth-schemas.test.js`       | 12-char minimum, **72-byte** bcrypt limit, matching passwords, token charset                                                                                                                                                                                                                                                     |
+| Flows                | `features/auth/auth-flow.test.jsx`   | login→dashboard, original-page return, unsafe redirect ignored, field errors, password toggle, register (no auto-login, verification flag respected, 409 on email), forgot-password generic response, reset token prefill, guards, cold-start restore, failed refresh, sign-out (incl. network failure), session-ended messaging |
+| Token storage        | same                                 | asserts the access token is **absent** from `localStorage` and `sessionStorage`                                                                                                                                                                                                                                                  |
+
+`tests/auth-helpers.js` provides `signInForTest` / `signOutForTest` / `resetAuthForTest` so specs can
+seed a session without touching the network.
+
 ### Example
 
 ```jsx
