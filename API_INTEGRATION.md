@@ -219,6 +219,20 @@ part of the contract and is therefore not presented as functional.
 - **Slug uniqueness.** Organization names map to a unique slug; a `409 ORGANIZATION_SLUG_TAKEN`
   surfaces as an inline conflict message.
 
+## Environment failures vs. application failures
+
+A `500` from the API is always a server-side problem, and the frontend deliberately does **not** show
+the backend's own message for 5xx — raw driver errors can leak internals. The envelope message is
+preserved on the error object as `ApiError.serverMessage` and logged with the `requestId` in the
+browser console, so a developer can tell a database outage from an application bug without reading the
+network tab.
+
+| Symptom                                           | Real cause                                                   | Fix                                            |
+| ------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------- |
+| `500` on any write operation                      | MongoDB is a standalone server, not a replica set (error 20) | Initiate a single-node replica set, see README |
+| Writes work, `500` reappears after editing `.env` | Backend booted before the `.env` change                      | Restart the backend                            |
+| `401` on every request                            | Refresh cookie not first-party (bypassing the Vite proxy)    | Call the API same-origin via the proxy         |
+
 ## Adding a new integration
 
 1. Confirm the operation exists in `/openapi.json`; note request/response schemas and enums.

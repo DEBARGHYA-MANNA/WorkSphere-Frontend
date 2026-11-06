@@ -58,6 +58,40 @@ npm run dev
 The backend must be reachable at the proxy target for API calls to succeed. Start it with the
 backend repository's own instructions (default `http://localhost:3000`, API base `/api/v1`).
 
+### The backend needs MongoDB running as a replica set
+
+Most write operations (creating an organization, project, task, comment, invitation or membership
+change) run inside a MongoDB transaction. **A standalone `mongod` cannot run them**, and the API
+answers `500` with:
+
+> `Transaction numbers are only allowed on a replica set member or mongos`
+
+That is a database configuration problem, not a frontend one, and it must be fixed in the backend:
+
+```bash
+# one-time, converts an existing standalone instance in place (no data loss)
+mongosh --eval 'rs.initiate({_id: "rs0", members: [{_id: 0, host: "127.0.0.1:27017"}]})'
+```
+
+```bash
+# backend .env — the URI must name the replica set
+MONGODB_URI=mongodb://127.0.0.1:27017/worksphere?replicaSet=rs0
+```
+
+**Restart the backend afterwards** — Node reads `.env` once at boot and never re-reads it. Reading
+and listing still work on a standalone server, so login succeeding is not proof the database is
+correctly configured.
+
+To find out which of these is wrong:
+
+```bash
+bash scripts/diagnose-mongo-transactions.sh /path/to/WorkSphere-Backend
+```
+
+It reports the URI the backend will actually load (credentials masked), whether the live server
+reports a replica set, and whether the running process started before or after your last `.env`
+edit — the last one being the most common reason a correct-looking fix changes nothing.
+
 ## Scripts
 
 | Script                  | Purpose                               |
