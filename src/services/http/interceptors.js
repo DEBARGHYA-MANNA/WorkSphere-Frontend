@@ -72,11 +72,14 @@ export function normaliseError(error) {
 
   // Prefer the backend's own message for 4xx (it is written for humans and is
   // safe); never surface 5xx internals.
-  const serverMessage = status >= 500 ? undefined : extractEnvelopeMessage(data)
-  const message = serverMessage || fallbackMessageFor(code)
+  const envelopeMessage = extractEnvelopeMessage(data)
+  // Only 4xx messages are written for humans and safe to display. A 5xx message
+  // often leaks internals (e.g. a raw MongoDB error), so it is kept aside as
+  // `serverMessage` for diagnostics only.
+  const message = (status < 500 && envelopeMessage) || fallbackMessageFor(code)
 
   if (status >= 500) {
-    logger.error('API server error', status, requestId)
+    logger.error('API server error', status, requestId, envelopeMessage ?? '')
   }
 
   return new ApiError({
@@ -86,6 +89,7 @@ export function normaliseError(error) {
     // uniformly; the backend's more specific code is preserved separately.
     code,
     serverCode: data?.error?.code ?? null,
+    serverMessage: envelopeMessage ?? null,
     details: extractFieldErrors(data) ?? data?.error?.details ?? null,
     requestId,
   })

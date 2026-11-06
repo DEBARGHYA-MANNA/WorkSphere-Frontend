@@ -31,6 +31,10 @@ export class ApiError extends Error {
    * @param {string} [params.serverCode] the backend's own `error.code`, kept for
    *        diagnostics. `code` stays one of `ApiErrorCode` so the derived
    *        helpers below keep working regardless of backend naming.
+   * @param {string} [params.serverMessage] the backend's raw message, kept for
+   *        diagnostics even on 5xx — where `message` is deliberately generic.
+   *        Never render this in normal UI; it exists so a developer reading the
+   *        console can tell a database outage from an application bug.
    */
   constructor({
     message,
@@ -39,12 +43,14 @@ export class ApiError extends Error {
     details = null,
     requestId,
     serverCode = null,
+    serverMessage = null,
   }) {
     super(message || 'Something went wrong. Please try again.')
     this.name = 'ApiError'
     this.status = status
     this.code = code
     this.serverCode = serverCode
+    this.serverMessage = serverMessage
     this.details = details
     this.requestId = requestId
     this.isApiError = true

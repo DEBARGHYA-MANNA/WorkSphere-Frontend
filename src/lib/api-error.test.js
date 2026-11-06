@@ -25,4 +25,18 @@ describe('ApiError', () => {
   it('falls back to a safe generic message', () => {
     expect(new ApiError({}).message).toMatch(/Something went wrong/)
   })
+
+  it('keeps a 5xx backend message for diagnostics without displaying it', () => {
+    const error = new ApiError({
+      message: 'The server ran into a problem. Please try again shortly.',
+      status: 500,
+      code: ApiErrorCode.SERVER,
+      serverMessage: 'Transaction numbers are only allowed on a replica set member or mongos',
+    })
+
+    // The user sees a safe message; the raw one is available to a developer.
+    expect(error.message).not.toMatch(/replica set|mongos/)
+    expect(error.serverMessage).toMatch(/replica set/)
+    expect(error.serverCode).toBeNull()
+  })
 })
