@@ -44,8 +44,14 @@ const buttonVariants = cva(
 
 /**
  * Accessible button with variant + size presets.
- * Renders as `<button>` by default; pass `asChild` to delegate to a child
- * element (e.g. a React Router `<Link>`).
+ *
+ * Renders `<button>` by default; pass `asChild` to delegate rendering to a single
+ * child element (e.g. a React Router `<Link>`) while keeping the styles.
+ *
+ * Note: Radix `Slot` merges this component's props onto **exactly one** child.
+ * The `asChild` branch therefore renders `children` untouched — wrapping them in
+ * a fragment (or adding a spinner sibling) silently drops className and ARIA
+ * attributes from the rendered element.
  */
 const Button = React.forwardRef(
   (
@@ -53,25 +59,27 @@ const Button = React.forwardRef(
     ref,
   ) => {
     const Comp = asChild ? Slot : 'button'
-    const content = (
-      <>
-        {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
-        {children}
-      </>
-    )
+    const isDisabled = Boolean(disabled || loading)
 
     return (
       <Comp
         ref={ref}
         className={cn(buttonVariants({ variant, size }), className)}
-        // `aria-disabled` is kept for asChild/Link renders where the native
-        // disabled attribute would not apply.
-        aria-disabled={disabled || loading || undefined}
-        disabled={asChild ? undefined : disabled || loading}
+        // `aria-disabled` also covers asChild renders (Link/label), where the
+        // native `disabled` attribute does not apply.
+        aria-disabled={isDisabled || undefined}
+        disabled={asChild ? undefined : isDisabled}
         data-loading={loading || undefined}
         {...props}
       >
-        {content}
+        {asChild ? (
+          children
+        ) : (
+          <>
+            {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+            {children}
+          </>
+        )}
       </Comp>
     )
   },

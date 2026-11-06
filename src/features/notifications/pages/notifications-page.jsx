@@ -12,6 +12,7 @@ export default function NotificationsPage() {
         'Filter by category and unread state',
         'Navigate to the related task',
       ]}
+      dependency="GET /organizations/:organizationId/notifications, /unread-count, PATCH /read-all and PATCH /:notificationId/read. No realtime channel exists, so unread state is polled conservatively."
     />
   )
 }

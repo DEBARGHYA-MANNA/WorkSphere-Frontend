@@ -12,6 +12,7 @@ export default function SettingsPage() {
         'Organization details and invite policy',
         'Theme and local display preferences',
       ]}
+      dependency="GET/PATCH /users/me, PATCH /users/me/password, PATCH /organizations/:organizationId. Theme preference is client-side only and never sent to the API."
     />
   )
 }

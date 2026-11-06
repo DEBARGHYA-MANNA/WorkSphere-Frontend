@@ -35,6 +35,20 @@ Coverage configuration lives in `vite.config.js` under `test.coverage`.
 - Prefer `await screen.findBy…` over `waitFor` for async appearance.
 - No snapshot tests for markup (they hide regressions and block refactors).
 
+### Shell and layout coverage (Phase 2)
+
+`src/app/layouts/app-shell.test.jsx` asserts the structural contract of the shell: exactly one
+`banner` and one `main` landmark, every primary destination present with the right `href`,
+`aria-current` on the active item (including nested routes), collapse/expand persistence, the mobile
+drawer opening, closing, and closing on navigation, skip-link focus order, and focus moving to
+`<main>` after navigation while _not_ stealing focus on first load.
+
+`src/components/layout/breadcrumbs.test.jsx` covers trail construction, label overrides, the rule
+that raw 24-character object ids never render, and `aria-current` on the last crumb.
+
+`src/components/ui/button.test.jsx` pins the `asChild` contract: styles and ARIA props must land on
+the child element (a regression guard for the Radix `Slot` fragment bug).
+
 ### Example
 
 ```jsx

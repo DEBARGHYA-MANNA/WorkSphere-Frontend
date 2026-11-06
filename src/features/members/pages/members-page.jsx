@@ -12,6 +12,7 @@ export default function MembersPage() {
         'Pending invitation status and revocation',
         'Permission-aware actions',
       ]}
+      dependency="GET /organizations/:organizationId/members (page, limit only — the API exposes no member search parameter) plus /invitations."
     />
   )
 }
